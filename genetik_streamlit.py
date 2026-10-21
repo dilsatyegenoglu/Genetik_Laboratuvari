@@ -1453,7 +1453,7 @@ def svg_genotip_fenotip():
     """Bezelye tohum rengi: genotip (kromozom çifti) → fenotip (tohum)."""
     W, H = 760, 330
     s = [svg_ac(W, H, 800)]
-    s.append(_yazi(W / 2, 24, "GENOTİP (taşınan alleller)  →  FENOTİP (görünen özellik)", 15, "#1F3F73", kalin=True))
+    s.append(_yazi(W / 2, 24, "GENOTİP (taşınan alleller)  →  FENOTİP (gözlenen / ölçülen özellik)", 15, "#1F3F73", kalin=True))
     ornek = [("AA", "#F2C94C", "sarı", "homozigot dominant"),
              ("Aa", "#F2C94C", "sarı", "heterozigot (a gizli)"),
              ("aa", "#6FBF4A", "yeşil", "homozigot resesif")]
@@ -1838,7 +1838,8 @@ TERIMLER = [
               "(ör. A ve a)."),
     ("Genotip", "Bir canlının taşıdığı genlerin (allellerin) bileşimi; sembolle gösterilir "
                 "(ör. AA, Aa, aa)."),
-    ("Fenotip", "Genotip ve çevrenin ortak etkisiyle ortaya çıkan, gözlenebilen özellikler. "
+    ("Fenotip", "Bir canlının gözlemlenebilir ve ölçülebilir özellikleri: morfolojik, fizyolojik, "
+                "biyokimyasal ya da davranışsal olabilir. Genotip ve çevrenin ortak ürünüdür: "
                 "Fenotip = Genotip + Çevre."),
     ("Karakter", "Canlıda kalıtım ve çevrenin etkisiyle ortaya çıkan özellik (göz rengi, kan "
                  "grubu, süt verimi...)."),
@@ -1961,6 +1962,27 @@ def _tur_sec(r, haric=()):
 
 
 # ---------------------------------------------------------------------------
+_FENOTIP_ORNEK = {
+    "Morfolojik": ["bezelyede tohum rengi", "sığırda boynuzlu/boynuzsuz olma", "koyunda yapağı rengi",
+                   "asmada yaprak biçimi", "tavukta ibik şekli", "bitki boyu"],
+    "Fizyolojik": ["ineğin süt verimi", "tavuğun yumurta verimi", "buzağının günlük canlı ağırlık artışı",
+                   "bitkinin kuraklığa dayanıklılığı", "soğuğa dayanıklılık", "yemden yararlanma"],
+    "Biyokimyasal": ["insanda ABO kan grubu", "sütte kazein tipi (A1/A2)", "üzümde antosiyanin miktarı",
+                     "bir enzimin aktivitesi", "zeytinyağında oleik asit oranı", "hemoglobin tipi"],
+    "Davranışsal": ["sığırda mizaç (uysallık)", "tavukta kuluçkaya yatma isteği", "koyunda annelik davranışı",
+                    "arıda savunma (saldırganlık) davranışı", "köpekte çoban davranışı"],
+}
+
+
+def _fenotip_turu(r):
+    tur = list(_FENOTIP_ORNEK)[int(r.integers(0, 4))]
+    ornek = _FENOTIP_ORNEK[tur][int(r.integers(0, len(_FENOTIP_ORNEK[tur])))]
+    return _secim(r, f"“{ornek.capitalize()}” hangi tür fenotiptir?", tur, [t for t in _FENOTIP_ORNEK if t != tur],
+                  [f"{tur}: " + {"Morfolojik": "biçim ve yapı", "Fizyolojik": "vücudun işleyişi, verim",
+                                 "Biyokimyasal": "molekül düzeyi, laboratuvarda ölçülür",
+                                 "Davranışsal": "davranış ve mizaç"}[tur] + "."])
+
+
 def gen_giris(r):
     g = int(r.integers(12, 40)) * 250
     c = int(r.choice([i for i in range(-12, 6) if i != 0])) * 250
@@ -1998,9 +2020,11 @@ def gen_giris(r):
                ["Çok sayıda gen tarafından etkilenirler", "Ölçülerek ifade edilirler",
                 "Sürekli bir dağılım gösterirler"],
                ["Kantitatif karakterler hem genlerden hem çevreden etkilenir."]),
-        _secim(r, "Fenotipi en doğru tanımlayan ifade hangisidir?", "Genotip ve çevrenin ortak etkisi",
-               ["Yalnızca genlerin toplamı", "Yalnızca çevrenin etkisi", "Gametlerin toplamı"],
-               ["F = G + Ç (+ G×Ç etkileşimi)."]),
+        _secim(r, "Fenotipi en doğru tanımlayan ifade hangisidir?",
+               "Genotip ve çevrenin etkisiyle oluşan, gözlemlenebilir ve ölçülebilir özellikler",
+               ["Yalnızca genlerin toplamı", "Yalnızca çevrenin etkisi", "Yalnızca gözle görülen dış görünüş"],
+               ["F = G + Ç (+ G×Ç etkileşimi). Fenotip morfolojik, fizyolojik, biyokimyasal ya da davranışsal olabilir."]),
+        _fenotip_turu(r),
         _secim(r, "Varyasyonun genetik kaynakları arasında hangisi YER ALMAZ?", "Modifikasyon",
                ["Mutasyon", "Rekombinasyon", "Seleksiyon"],
                ["Modifikasyon kalıtsal değildir; genetik varyasyon oluşturmaz."]),
@@ -2609,8 +2633,14 @@ def ek_giris(r):
         ("Genotip nedir?", "Bireyin taşıdığı allellerin bileşimi (ör. Aa)",
          ["Gözlenen özellik", "Genomun tamamı", "Çevrenin etkisi"],
          ["Genotip sembolle gösterilir: AA, Aa, aa."]),
-        ("Fenotip nedir?", "Genotip ve çevrenin etkisiyle ortaya çıkan, gözlenen özellik",
-         ["Yalnızca genlerin toplamı", "Kromozom sayısı", "DNA dizisi"], ["F = G + Ç."]),
+        ("Fenotip nedir?", "Canlının gözlemlenebilir ve ölçülebilir özellikleri",
+         ["Yalnızca genlerin toplamı", "Kromozom sayısı", "DNA dizisi"],
+         ["Morfolojik, fizyolojik, biyokimyasal ya da davranışsal olabilir; F = G + Ç."]),
+        ("Hangisi fenotipin gruplarından biri DEĞİLDİR?", "Allelik", ["Morfolojik", "Fizyolojik", "Biyokimyasal"],
+         ["Fenotip: morfolojik, fizyolojik, biyokimyasal, davranışsal."]),
+        ("Gözle görülmeyen ama laboratuvarda ölçülebilen kan grubu için hangisi doğrudur?", "Biyokimyasal bir fenotiptir",
+         ["Fenotip değildir, genotiptir", "Davranışsal bir fenotiptir", "Çevresel bir özelliktir"],
+         ["Fenotip yalnızca dış görünüş değildir; ölçülebilen her özellik fenotiptir."]),
         ("Genotipleri AA ve Aa olan iki bezelyenin tohumları sarıdır. Bu durum neyi gösterir?",
          "Farklı genotipler aynı fenotipi verebilir",
          ["Genotip ve fenotip her zaman aynıdır", "Çevre genotipi değiştirir", "A alleli resesiftir"],
@@ -3073,8 +3103,17 @@ aracılığıyla geçer.""")
     st.markdown("""
 - **Genotip:** Bireyin incelenen gen(ler) için taşıdığı **allellerin bileşimi**. Sembollerle
   yazılır: **AA, Aa, aa**. Gözle görülmez.
-- **Fenotip:** Canlıda **gözlenen ya da ölçülen** özellik: sarı tohum, 6000 kg süt, A kan
-  grubu… Genotip ve çevrenin ortak ürünüdür.""")
+- **Fenotip:** Bir canlının **gözlemlenebilir ve ölçülebilir** bütün özellikleridir. Genotip ile
+  çevrenin ortak ürünüdür. Fenotip yalnızca gözle görülen dış görünüş değildir; dört grupta
+  incelenir:""")
+    kartlar([("🌿 Morfolojik", "Biçim ve yapı: tohum rengi ve şekli, boy, yaprak biçimi, tüy rengi, boynuz"),
+             ("⚙️ Fizyolojik", "Vücudun işleyişi: süt verimi, büyüme hızı, yumurta verimi, kuraklığa ve "
+                              "soğuğa dayanıklılık"),
+             ("🧪 Biyokimyasal", "Moleküler düzey: kan grubu, enzim aktivitesi, süt proteini tipi, "
+                                "antosiyanin ve yağ asidi içeriği"),
+             ("🐄 Davranışsal", "Davranış: mizaç (uysallık), annelik davranışı, kuluçkaya yatma, sürü içi davranış")])
+    st.caption("Kan grubu ya da bir enzimin aktivitesi gözle görülmez ama laboratuvarda ölçülebilir; bu yüzden "
+               "bunlar da fenotiptir.")
     kartlar([("🧬 Genotip", "Aa · içerik, 'tarif'"),
              ("👀 Fenotip", "Sarı tohum · görünen sonuç, 'yemek'"),
              ("🌦️ Çevre", "Besleme, bakım, iklim · 'aşçının mutfağı'")])
@@ -3100,8 +3139,8 @@ DNA'sı olduğu için bazı özellikler **kromozom dışı** yolla kalıtılır:
 
     st.header("Fenotip = Genotip + Çevre")
     st.markdown("""
-**Fenotip**, bir canlıda gözlenen özelliklerin tamamıdır ve **genotip ile çevrenin ortak
-etkisiyle** oluşur. Genotip özelliğin **sınırlarını (potansiyelini)** belirler; çevre (besleme,
+**Fenotip**, bir canlının gözlemlenebilir ve ölçülebilir (morfolojik, fizyolojik, biyokimyasal,
+davranışsal) özelliklerinin tamamıdır ve **genotip ile çevrenin ortak etkisiyle** oluşur. Genotip özelliğin **sınırlarını (potansiyelini)** belirler; çevre (besleme,
 bakım, iklim, hastalık) bu potansiyelin ne kadarının ortaya çıkacağını etkiler.""")
     st.latex(r"F = G + \text{Ç}")
     st.latex(r"F = G + \text{Ç} + (G \times \text{Ç})")

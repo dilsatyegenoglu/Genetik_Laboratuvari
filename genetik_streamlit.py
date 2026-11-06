@@ -52,6 +52,13 @@ st.markdown("""
 .kodon {display:inline-block; border:1.5px solid rgba(128,128,128,0.6); border-radius:6px;
         padding:2px 6px; margin:3px; text-align:center; font-family:monospace;}
 .kodon small {display:block; font-family:sans-serif; font-size:11px;}
+.mat-kap {overflow-x:auto;}
+table.kodtab {border-collapse:collapse; font-size:0.86rem; margin:6px 0 10px 0;}
+table.kodtab th, table.kodtab td {border:1px solid rgba(128,128,128,0.45); padding:3px 6px; text-align:left; white-space:nowrap;}
+table.kodtab th {background:rgba(31,58,95,0.10); text-align:center;}
+table.kodtab td b {font-family:monospace;}
+table.kodtab td.bas {background:#B9E4C1;} table.kodtab td.dur {background:#F4B6B6;}
+table.kodtab td.vurgu {background:#FFE08A; font-weight:700;}
 .zaman {border-left:4px solid #3B6FB6; padding:4px 0 4px 12px; margin:6px 0;}
 .zaman b.yil {color:#3B6FB6; font-size:1.05rem;}
 .flash {border:2px solid #3B6FB6; border-radius:14px; padding:26px; text-align:center;
@@ -2577,7 +2584,7 @@ _TUM_URETICILER = None
 
 def gen_tekrar(r):
     ureticiler = [gen_giris, gen_tarih, gen_hucre, gen_kromozom, gen_dongu, gen_mitoz, gen_mayoz,
-                  gen_gamet, gen_nukleik, gen_trans, gen_dogma, gen_terim]
+                  gen_gamet, gen_nukleik, gen_trans, gen_dogma, gen_kod, gen_terim]
     secilen = [ureticiler[int(i)] for i in r.permutation(len(ureticiler))[:SORU_SAYISI]]
     return [u(r)[0] for u in secilen]
 
@@ -3009,8 +3016,9 @@ sonunda **10, 20 ya da 30 soruluk alıştırma** ve **adım adım çözümler** 
         ("9 · Nükleik asitler", "Nükleotit, DNA ve RNA'nın yapısı, baz eşleşmesi"),
         ("10 · Transkripsiyon ve translasyon", "Adım adım animasyonla DNA → mRNA → protein"),
         ("11 · Replikasyon, genetik kod, mutasyon", "DNA'nın eşlenmesi, gen çevirici, mutasyon laboratuvarı"),
-        ("12 · Terimler", "Sözlük, semboller ve hafıza kartları"),
-        ("13 · Genel tekrar", "Tüm konulardan karışık sorular"),
+        ("12 · Genetik kod ve kodon atölyesi", "Neden üçlü, okuma çerçevesi, kod tablosu, DNA → tamamlayıcı DNA → mRNA → protein alıştırması"),
+        ("13 · Terimler", "Sözlük, semboller ve hafıza kartları"),
+        ("14 · Genel tekrar", "Tüm konulardan karışık sorular"),
     ])
     st.markdown("**Hazırlayanlar:** Emine Dilşat Yeğenoğlu & Tevfik Hasan Can")
     ipucu("Telefonda bölümleri sayfanın en üstündeki <b>Bölüm</b> kutusundan ya da sayfa "
@@ -3769,7 +3777,7 @@ nükleotitleri ekler. Sonuçta her yeni DNA'da **bir eski, bir yeni zincir** bul
     st.header("2. Genetik kod")
     st.markdown("""
 mRNA üzerindeki her **üçlü baz (kodon)** bir amino asidi belirler (ayrıntılı anlatım:
-**10 · Transkripsiyon ve translasyon**).
+**10 · Transkripsiyon ve translasyon**; kod tablosu ve alıştırmalar: **12 · Genetik kod ve kodon atölyesi**).
 - Başlangıç kodonu: **AUG** (Metiyonin)
 - Durdurma kodonları: **UAA, UAG, UGA**
 - 4 × 4 × 4 = **64 kodon**, **20 amino asidi** kodlar: bir amino asidi birden çok kodon
@@ -3855,7 +3863,7 @@ def _kart_yeni():
 
 
 def sayfa_terimler():
-    st.title("12 · Temel terimler ve semboller")
+    st.title("13 · Temel terimler ve semboller")
     st.header("Genetik problemlerde kullanılan semboller")
     tablo(pd.DataFrame(SEMBOLLER, columns=["Sembol", "Anlamı"]))
     st.header("🃏 Hafıza kartları")
@@ -3880,7 +3888,7 @@ def sayfa_terimler():
 
 # ---------------------------------------------------------------------------
 def sayfa_tekrar():
-    st.title("13 · Genel tekrar")
+    st.title("14 · Genel tekrar")
     st.markdown("Bütün konulardan karışık sorular (10, 20 ya da 30). **🎲 Yeni sorular** ile istediğiniz kadar "
                 "tekrar edebilirsiniz.")
     alistirma_blogu("tekrar", "Karışık sorular", gen_tekrar)
@@ -3980,6 +3988,290 @@ Bakterilerde çekirdek olmadığı için transkripsiyon ve translasyon aynı and
 
 
 # ===========================================================================
+# 12 · GENETİK KOD VE KODON ATÖLYESİ
+# ===========================================================================
+_TUM = {"A": "T", "T": "A", "G": "C", "C": "G"}          # DNA → DNA
+_KALIP_MRNA = {"A": "U", "T": "A", "G": "C", "C": "G"}   # kalıp DNA → mRNA
+
+
+def _cdna(kalip):
+    return "".join(_TUM[b] for b in kalip)
+
+
+def _mrna(kalip):
+    return "".join(_KALIP_MRNA[b] for b in kalip)
+
+
+def _diger(r, tum, dogru, n=3):
+    aday = [x for x in dict.fromkeys(tum) if x != dogru]
+    return [aday[int(i)] for i in r.permutation(len(aday))[:n]]
+
+
+def _kodon_sayisi(harf):
+    return sum(1 for k in GENETIK_KOD if GENETIK_KOD[k] == harf)
+
+
+def _karsilastir_html(dogru, girilen):
+    """Baz baz karşılaştırma: doğru yeşil, yanlış kırmızı, eksik gri."""
+    out = []
+    for i, d in enumerate(dogru):
+        g = girilen[i] if i < len(girilen) else "·"
+        renk = "#B9E4C1" if g == d else ("#F4B6B6" if g != "·" else "#DDDDDD")
+        out.append(f'<span class="baz" style="background:{renk}">{g}</span>')
+    if len(girilen) > len(dogru):
+        out.append(f' <small style="color:#C0392B">+{len(girilen) - len(dogru)} fazla baz</small>')
+    return "".join(out)
+
+
+def _kod_temizle(metin, alfabe):
+    return "".join(b for b in metin.upper().replace("İ", "I") if b in alfabe)
+
+
+def _kod_tablosu_html(vurgu_aa=None, vurgu_kodon=None):
+    sat = ['<div class="mat-kap"><table class="kodtab"><tr><th>1. baz</th>'
+           + "".join(f"<th>2. baz: {b}</th>" for b in "UCAG") + "<th>3. baz</th></tr>"]
+    for b1 in "UCAG":
+        for j, b3 in enumerate("UCAG"):
+            hucre = []
+            for b2 in "UCAG":
+                k = b1 + b2 + b3
+                a = GENETIK_KOD[k]
+                sinif = ""
+                if a == "*":
+                    sinif = "dur"
+                elif k == "AUG":
+                    sinif = "bas"
+                if vurgu_aa is not None and a == vurgu_aa:
+                    sinif = "vurgu"
+                if vurgu_kodon == k:
+                    sinif = "vurgu"
+                hucre.append(f'<td class="{sinif}"><b>{k}</b> {AA_AD[a][0]}</td>')
+            ilk = f'<th rowspan="4">{b1}</th>' if j == 0 else ""
+            sat.append(f"<tr>{ilk}{''.join(hucre)}<th>{b3}</th></tr>")
+    sat.append("</table></div>")
+    return "".join(sat)
+
+
+def sayfa_kod():
+    st.title("12 · Genetik kod ve kodon atölyesi")
+    st.markdown("""
+DNA'da yalnızca **4 harf** (A, T, G, C) var; proteinlerde ise **20 çeşit amino asit**. Peki 4 harfle
+20 amino asit nasıl yazılır? Cevap: harfleri **üçerli gruplar** hâlinde okuyarak. Bu üçlü gruba
+**kodon**, kodonlarla amino asitler arasındaki eşleşme kurallarının bütününe **genetik kod** denir.""")
+
+    # ------------------------------------------------------------------ neden üçlü
+    st.header("1. Neden üçlü (triplet)?")
+    n = st.select_slider("Bir kodon kaç bazdan oluşsaydı?", options=[1, 2, 3, 4], value=1, key="kod_n")
+    kombin = 4 ** n
+    c1, c2 = st.columns(2)
+    c1.metric("Yazılabilecek farklı “kelime”", f"4{'¹²³⁴'[n - 1]} = {kombin}")
+    c2.metric("Gerekli en az kelime", "20 amino asit + DUR")
+    fig = go.Figure(go.Bar(x=[f"{k} baz" for k in (1, 2, 3, 4)], y=[4 ** k for k in (1, 2, 3, 4)],
+                           marker_color=["#E4572E" if 4 ** k < 21 else ("#3C9A5F" if k == 3 else "#9FB7D6")
+                                         for k in (1, 2, 3, 4)],
+                           text=[str(4 ** k) for k in (1, 2, 3, 4)], textposition="outside"))
+    fig.add_hline(y=21, line_dash="dash", line_color="#333", annotation_text="21 (20 amino asit + DUR)",
+                  annotation_position="top left")
+    fig.update_layout(yaxis_type="log", yaxis_title="Farklı kodon sayısı (log ölçek)", title="Kodon uzunluğu ve kelime sayısı")
+    ciz(fig, 320)
+    if n < 3:
+        st.error(f"{n} bazlık kodonla yalnızca **{kombin}** farklı kelime yazılır; 20 amino asidin hepsine yetmez.")
+    elif n == 3:
+        st.success("**3 bazla 64 kelime** yazılır: 20 amino asit ve durdurma sinyali için yeter, artar. "
+                   "Artan kodonlar sayesinde birçok amino asidin birden fazla kodonu vardır.")
+    else:
+        st.info("4 bazla 256 kelime olurdu; gereğinden çok fazla. Doğa, işini gören en kısa uzunluğu, **3**'ü kullanır.")
+
+    # ------------------------------------------------------------------ özellikler
+    st.header("2. Genetik kodun özellikleri")
+    kartlar([("Üçlüdür (triplet)", "Her kodon 3 bazdır: AUG, GCU, UAA …"),
+             ("Örtüşmez ve virgülsüzdür", "Kodonlar art arda, aralıksız okunur; bir baz iki kodonda birden kullanılmaz."),
+             ("Başlangıç kodonu", "AUG (metiyonin). Okuma buradan başlar ve okuma çerçevesini belirler."),
+             ("Durdurma kodonları", "UAA, UAG, UGA. Amino asit belirlemez; protein sentezini bitirir."),
+             ("Dejeneredir (yedekli)", "Bir amino asidi birden çok kodon belirleyebilir: lösinin 6, glisinin 4 kodonu vardır."),
+             ("Belirsiz değildir", "Bir kodon her zaman yalnızca bir amino asidi belirler."),
+             ("Evrenseldir", "Bakteriden bitkiye, insana kadar hemen bütün canlılarda aynıdır (mitokondride birkaç küçük istisna vardır).")])
+
+    # ------------------------------------------------------------------ okuma çerçevesi
+    st.header("3. Okuma çerçevesi: nereden başladığın önemli")
+    st.markdown("Kodonlar virgülsüz okunduğu için **nereden başladığınız** her şeyi değiştirir. Bir cümleyle deneyelim:")
+    cumle = "BIRARIBALYER"
+    kay = st.radio("Okumaya kaçıncı harften başlansın?", ["1. harf (doğru)", "2. harf", "3. harf"], horizontal=True,
+                   key="kod_kay")
+    k = {"1. harf (doğru)": 0, "2. harf": 1, "3. harf": 2}[kay]
+    parca = [cumle[i:i + 3] for i in range(k, len(cumle) - 2, 3)]
+    st.markdown('<div class="dizi">' + " ".join(f'<span class="kodon">{p}</span>' for p in parca) + "</div>",
+                unsafe_allow_html=True)
+    if k == 0:
+        st.success("BİR · ARI · BAL · YER: anlamlı cümle.")
+    else:
+        st.error("Anlamsız! Okuma çerçevesi kaydı: her kelime bozuldu.")
+    ornek_mrna = "AUGGAACUUUGGAAAUAA"
+    _, kod0, aa0 = _cevir(ornek_mrna, False)
+    _, kod1, aa1 = _cevir(ornek_mrna[1:], False)
+    st.markdown("Aynı şey mRNA'da da olur:")
+    st.markdown("**Doğru çerçeve:** " + _kodon_html(kod0, aa0), unsafe_allow_html=True)
+    st.markdown("**Bir baz kaymış:** " + _kodon_html(kod1, aa1), unsafe_allow_html=True)
+    ipucu("Bu yüzden DNA'ya <b>bir baz eklenmesi ya da silinmesi</b> (çerçeve kayması mutasyonu) genellikle "
+          "proteini tamamen bozar; tek bir bazın değişmesi ise çoğu zaman yalnız bir amino asidi etkiler.")
+
+    # ------------------------------------------------------------------ kod tablosu
+    st.header("4. Genetik kod tablosu")
+    st.markdown("Bir kodonu bulmak için: **1. baz** satırı → **2. baz** sütunu → **3. baz** satırın içindeki sıra.")
+    secenek = ["(seçiniz)"] + sorted({a for a in GENETIK_KOD.values() if a != "*"}, key=lambda a: AA_AD[a][1]) + ["*"]
+    aa = st.selectbox("Bir amino asit seçin, kodonları tabloda parlasın", secenek,
+                      format_func=lambda a: a if a == "(seçiniz)" else f"{AA_AD[a][1]} ({AA_AD[a][0]})", key="kod_aa")
+    if aa != "(seçiniz)":
+        kodlar = [kk for kk in GENETIK_KOD if GENETIK_KOD[kk] == aa]
+        kutu(f"<b>{AA_AD[aa][1]}</b>: {len(kodlar)} kodon → " + ", ".join(kodlar)
+             + ("<br>Bunlar durdurma kodonlarıdır; amino asit belirlemez." if aa == "*" else ""))
+    st.markdown(_kod_tablosu_html(None if aa == "(seçiniz)" else aa), unsafe_allow_html=True)
+    st.caption("Yeşil: başlangıç kodonu AUG · Kırmızı: durdurma kodonları · Sarı: seçtiğiniz amino asit")
+    dejen = pd.DataFrame(sorted(((AA_AD[a][1], _kodon_sayisi(a)) for a in set(GENETIK_KOD.values()) if a != "*"),
+                                key=lambda x: -x[1]), columns=["Amino asit", "Kodon sayısı"])
+    with st.expander("Hangi amino asidin kaç kodonu var? (dejenerelik)"):
+        fig = go.Figure(go.Bar(x=dejen["Amino asit"], y=dejen["Kodon sayısı"], marker_color="#3B6FB6"))
+        fig.update_layout(yaxis_title="Kodon sayısı", xaxis_tickangle=-60)
+        ciz(fig, 320)
+        st.markdown("Metiyonin ve triptofanın yalnız **1** kodonu vardır; lösin, serin ve arjininin **6**. "
+                    "Toplam: 61 anlamlı kodon + 3 durdurma kodonu = **64**.")
+
+    # ------------------------------------------------------------------ atölye
+    st.header("5. 🧪 Atölye: DNA → tamamlayıcı DNA → mRNA")
+    st.markdown("""
+**Kurallar**
+- DNA'da **A ↔ T**, **G ↔ C** eşleşir. Tamamlayıcı zincir **zıt yönlüdür**: kalıp 3′→5′ ise tamamlayıcı 5′→3′.
+- mRNA kalıp DNA'ya tamamlayıcıdır ama **T yerine U** kullanılır: kalıptaki **A'nın karşısına U** gelir.
+- Kısa yol: mRNA, tamamlayıcı (kodlayan) DNA ile **aynı dizidir; yalnız T'ler U olur.**""")
+    if "kod_kalip" not in st.session_state:
+        st.session_state.kod_kalip = "".join("ATGC"[int(i)] for i in rng().integers(0, 4, 10))
+    kalip = st.session_state.kod_kalip
+    st.markdown(f'<div class="dizi">Kalıp DNA &nbsp;3′ {_baz_html(kalip)} 5′</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    g_cdna = c1.text_input("Tamamlayıcı DNA (5′→3′), 10 baz", key=f"kod_cdna_{kalip}", placeholder="ör. ATGC…")
+    g_mrna = c2.text_input("mRNA (5′→3′), 10 baz", key=f"kod_mrna_{kalip}", placeholder="ör. AUGC…")
+    b1, b2, b3 = st.columns(3)
+    kontrol = b1.button("✔️ Kontrol et", key="kod_kontrol")
+    goster = b2.button("👁️ Cevabı göster", key="kod_goster")
+    if b3.button("🔄 Yeni dizi", key="kod_yeni"):
+        st.session_state.kod_kalip = "".join("ATGC"[int(i)] for i in rng().integers(0, 4, 10))
+        st.rerun()
+    d_cdna, d_mrna = _cdna(kalip), _mrna(kalip)
+    if kontrol or goster:
+        gc, gm = _kod_temizle(g_cdna, "ATGC"), _kod_temizle(g_mrna, "AUGCT")
+        if kontrol:
+            st.markdown(f'<div class="dizi">Sizin DNA &nbsp;5′ {_karsilastir_html(d_cdna, gc)} 3′</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="dizi">Sizin mRNA 5′ {_karsilastir_html(d_mrna, gm)} 3′</div>', unsafe_allow_html=True)
+            dc = sum(a == b for a, b in zip(d_cdna, gc))
+            dm = sum(a == b for a, b in zip(d_mrna, gm))
+            if gc == d_cdna and gm == d_mrna:
+                st.success("🎉 İkisi de tamamen doğru!")
+            else:
+                st.warning(f"DNA: {dc}/10 doğru · mRNA: {dm}/10 doğru. Kırmızı bazlara bakın.")
+                if "T" in gm:
+                    st.error("mRNA'da T olmaz; T yerine U yazın.")
+                if gm and gm == d_cdna:
+                    st.info("mRNA'yı DNA gibi yazmışsınız: harfler doğru ama T'leri U yapmayı unutmayın.")
+                if gm and gm == kalip.replace("T", "U"):
+                    st.info("mRNA kalıbın kopyası değil, kalıba tamamlayıcıdır.")
+        if goster:
+            st.markdown(f'<div class="dizi">Kalıp DNA &nbsp;3′ {_baz_html(kalip)} 5′<br>'
+                        f'Tamaml. DNA 5′ {_baz_html(d_cdna)} 3′<br>'
+                        f'mRNA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5′ {_baz_html(d_mrna)} 3′</div>', unsafe_allow_html=True)
+
+    st.subheader("Bir adım daha: mRNA'yı proteine çevirin")
+    if "kod_m9" not in st.session_state:
+        anlamli = [kk for kk in GENETIK_KOD if GENETIK_KOD[kk] != "*" and kk != "AUG"]
+        st.session_state.kod_m9 = "AUG" + "".join(anlamli[int(i)] for i in rng().integers(0, len(anlamli), 2)) + "UAA"
+    m9 = st.session_state.kod_m9
+    kodonlar = [m9[i:i + 3] for i in range(0, len(m9), 3)]
+    st.markdown(f'<div class="dizi">mRNA 5′ {_baz_html(m9)} 3′</div>', unsafe_allow_html=True)
+    st.markdown("Diziyi kodonlara ayırın ve tablodan her kodonun amino asidini bulun:")
+    aa_sec = ["(seçiniz)"] + sorted({AA_AD[a][1] for a in AA_AD if a != "*"}) + ["DUR (durdurma)"]
+    kol = st.columns(len(kodonlar))
+    cevap = []
+    for i, (kk, kc) in enumerate(zip(kodonlar, kol)):
+        kc.markdown(f'<span class="kodon">{kk}</span>', unsafe_allow_html=True)
+        cevap.append(kc.selectbox(f"{i + 1}. kodon", aa_sec, key=f"kod_aa_{m9}_{i}", label_visibility="collapsed"))
+    b1, b2 = st.columns(2)
+    if b1.button("✔️ Proteini kontrol et", key="kod_pkontrol"):
+        dogru = [("DUR (durdurma)" if GENETIK_KOD[kk] == "*" else AA_AD[GENETIK_KOD[kk]][1]) for kk in kodonlar]
+        sonuc = [c == d for c, d in zip(cevap, dogru)]
+        if all(sonuc):
+            st.success("🎉 Doğru! Protein: " + "–".join(AA_AD[GENETIK_KOD[kk]][0] for kk in kodonlar[:-1])
+                       + " (son kodon durdurma, amino asit eklenmez).")
+        else:
+            st.warning(f"{sum(sonuc)}/{len(sonuc)} doğru. Doğrusu: "
+                       + " · ".join(f"{kk} → {d}" for kk, d in zip(kodonlar, dogru)))
+    if b2.button("🔄 Yeni mRNA", key="kod_pyeni"):
+        st.session_state.pop("kod_m9", None)
+        st.rerun()
+    alistirma_blogu("kod", "Genetik kod ve kodon", gen_kod)
+
+
+# ---------------------------------------------------------------------------
+def gen_kod(r):
+    kalip = _rasgele_dna(r, 10)
+    cdna, mrna = _cdna(kalip), _mrna(kalip)
+    anlamli = [kk for kk in GENETIK_KOD if GENETIK_KOD[kk] != "*"]
+    kodon = anlamli[int(r.integers(0, len(anlamli)))]
+    aa_h = GENETIK_KOD[kodon]
+    aa_adlari = sorted({AA_AD[a][1] for a in AA_AD if a != "*"})
+    aa2 = [a for a in set(GENETIK_KOD.values()) if a != "*"]
+    secilen_aa = aa2[int(r.integers(0, len(aa2)))]
+    ks = _kodon_sayisi(secilen_aa)
+    baz = int(r.integers(4, 30)) * 3
+    sabit = [
+        _secim(r, f"Kalıp DNA zinciri 3′-{kalip}-5′ ise tamamlayıcı DNA zinciri hangisidir (5′→3′)?", f"5′-{cdna}-3′",
+               [f"5′-{mrna}-3′", f"5′-{kalip}-3′", f"5′-{cdna[::-1]}-3′"] + [f"5′-{v}-3′" for v in _bozuk(r, cdna, "ATGC")],
+               ["A ↔ T, G ↔ C eşleşir; DNA'da U bulunmaz.", f"Tamamlayıcı zincir: **5′-{cdna}-3′**."]),
+        _secim(r, f"Kalıp DNA zinciri 3′-{kalip}-5′ ise sentezlenecek mRNA hangisidir (5′→3′)?", f"5′-{mrna}-3′",
+               [f"5′-{cdna}-3′", f"5′-{kalip.replace('T', 'U')}-3′", f"5′-{mrna[::-1]}-3′"] + [f"5′-{v}-3′" for v in _bozuk(r, mrna, "AUGC")],
+               ["mRNA kalıba tamamlayıcıdır; kalıptaki A'nın karşısına U gelir.",
+                f"Kısa yol: tamamlayıcı DNA {cdna} → T'leri U yap → **{mrna}**."]),
+        _secim(r, f"mRNA kodonu {kodon} hangi amino asidi belirler?", AA_AD[aa_h][1],
+               _diger(r, [a for a in aa_adlari], AA_AD[aa_h][1]),
+               [f"Tablo: 1. baz {kodon[0]}, 2. baz {kodon[1]}, 3. baz {kodon[2]} → **{AA_AD[aa_h][1]}**."]),
+        soru_sayi(f"{AA_AD[secilen_aa][1]} kaç farklı kodonla şifrelenir?", ks,
+                  [_md(f"Tablodaki {AA_AD[secilen_aa][1]} kodonları: " + ", ".join(kk for kk in GENETIK_KOD if GENETIK_KOD[kk] == secilen_aa) + ".")],
+                  yanlis=[v for v in (1, 2, 3, 4, 6) if v != ks][:3], ondalik=0),
+        soru_sayi(f"Durdurma kodonuyla biten {baz} nükleotitlik bir mRNA kaç amino asitlik bir protein oluşturur?",
+                  baz // 3 - 1, [_md(f"{baz} ÷ 3 = {baz // 3} kodon; durdurma kodonu amino asit belirlemez: {baz // 3} − 1 = **{baz // 3 - 1}**.")],
+                  yanlis=[baz // 3, baz, baz // 3 + 1], ondalik=0),
+    ]
+    havuz = [
+        ("Bir kodon kaç bazdan oluşur?", "3", ["1", "2", "4"], "Üçlü (triplet) kod."),
+        ("Kodonlar neden üçlüdür?", "İkili kodla yalnızca 16 kombinasyon olur; 20 amino aside yetmez",
+         ["Ribozom üç parçalıdır", "DNA'da üç çeşit baz vardır", "Her amino asit üç kez kodlanır"], "4² = 16 < 20; 4³ = 64 ≥ 20."),
+        ("Dört bazla oluşturulabilecek farklı kodon sayısı kaçtır?", "64", ["16", "20", "12"], "4 × 4 × 4 = 64."),
+        ("Başlangıç kodonu hangisidir?", "AUG", ["UAA", "UGA", "UAG"], "AUG metiyonini kodlar ve okumayı başlatır."),
+        ("Hangisi durdurma kodonudur?", "UGA", ["AUG", "GGA", "UGG"], "Durdurma kodonları: UAA, UAG, UGA."),
+        ("Durdurma kodonları ne işe yarar?", "Protein sentezini bitirir, amino asit belirlemez",
+         ["Metiyonin ekler", "Okumayı başlatır", "mRNA'yı kopyalar"], "Bunlara uyan tRNA yoktur."),
+        ("Bir amino asidin birden çok kodonla belirlenmesine ne denir?", "Dejenerelik (yedeklilik)",
+         ["Evrensellik", "Örtüşme", "Çerçeve kayması"], "Örneğin lösinin 6 kodonu vardır."),
+        ("Genetik kodun evrensel olması ne demektir?", "Hemen bütün canlılarda aynı kodonların aynı amino asitleri belirlemesi",
+         ["Her canlının kendine özgü kodu olması", "Yalnız insanlarda geçerli olması", "Kodonların zamanla değişmesi"],
+         "Bu yüzden bir bitki geni bakteride okunup proteine çevrilebilir."),
+        ("“Bir kodon her zaman tek bir amino asidi belirler.” Bu özellik nedir?", "Kodun belirsiz olmaması",
+         ["Dejenerelik", "Örtüşme", "Evrensellik"], "Bir amino asidin çok kodonu olabilir, ama bir kodonun tek anlamı vardır."),
+        ("Kodonlar art arda, aralıksız ve birbirine karışmadan okunur. Bu özellik nedir?", "Örtüşmez ve virgülsüz olması",
+         ["Dejenere olması", "Evrensel olması", "Üçlü olmaması"], "Bir baz iki kodonda birden kullanılmaz."),
+        ("Bir genin ortasına tek bir baz eklenirse genellikle ne olur?", "Okuma çerçevesi kayar, sonraki bütün kodonlar değişir",
+         ["Yalnız bir amino asit değişir", "Hiçbir şey değişmez", "Protein iki katına uzar"], "Çerçeve kayması mutasyonu."),
+        ("mRNA'da hangi baz bulunmaz?", "Timin (T)", ["Urasil (U)", "Adenin (A)", "Guanin (G)"], "RNA'da T yerine U vardır."),
+        ("Kalıp DNA'daki adeninin (A) karşısına mRNA'da hangi baz gelir?", "Urasil (U)", ["Timin (T)", "Guanin (G)", "Sitozin (C)"], "RNA'da T yoktur."),
+        ("mRNA dizisi hangi DNA zinciriyle aynıdır (T yerine U olmak üzere)?", "Kodlayan (tamamlayıcı) zincir",
+         ["Kalıp zincir", "Her iki zincir", "Hiçbiri"], "mRNA kalıba tamamlayıcıdır; bu yüzden kodlayan zincire benzer."),
+        ("tRNA üzerindeki, mRNA kodonuna tamamlayıcı üçlü baza ne denir?", "Antikodon", ["Kodon", "Promotor", "İntron"], "Antikodon kodonu tanır."),
+        ("Yalnızca bir kodonu olan amino asit hangisidir?", "Metiyonin", ["Lösin", "Serin", "Arjinin"], "Metiyonin (AUG) ve triptofan (UGG) tek kodonludur."),
+        ("Genetik kod tablosunda kaç anlamlı (amino asit belirleyen) kodon vardır?", "61", ["64", "20", "3"], "64 − 3 durdurma = 61."),
+    ]
+    havuz = [_secim(r, m, d, y, [c]) for m, d, y, c in havuz]
+    return _tamamla(r, sabit, havuz)
+
+
+# ===========================================================================
 # Gezinme
 # ===========================================================================
 SAYFALAR = [
@@ -3995,8 +4287,9 @@ SAYFALAR = [
     st.Page(sayfa_nukleik, title="9 · Nükleik asitler", url_path="nukleik-asitler"),
     st.Page(sayfa_trans, title="10 · Transkripsiyon ve translasyon", url_path="transkripsiyon-translasyon"),
     st.Page(sayfa_dogma, title="11 · Replikasyon, genetik kod, mutasyon", url_path="replikasyon-genetik-kod"),
-    st.Page(sayfa_terimler, title="12 · Terimler", url_path="terimler"),
-    st.Page(sayfa_tekrar, title="13 · Genel tekrar", url_path="genel-tekrar"),
+    st.Page(sayfa_kod, title="12 · Genetik kod ve kodon atölyesi", url_path="genetik-kod"),
+    st.Page(sayfa_terimler, title="13 · Terimler", url_path="terimler"),
+    st.Page(sayfa_tekrar, title="14 · Genel tekrar", url_path="genel-tekrar"),
 ]
 gezinme = st.navigation(SAYFALAR)
 

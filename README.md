@@ -27,8 +27,9 @@ uygulamasıdır. Bilgisayardan ve telefondan tarayıcıyla açılır. Bütün ş
 | 9 · Nükleik asitler | Nükleotit, pürin/pirimidin, çift sarmal; kendi DNA dizinizle tamamlayıcı iplik, H bağı, GC oranı; Chargaff |
 | 10 · Transkripsiyon ve translasyon | Kaydırıcıyla adım adım RNA polimeraz ve ribozom animasyonu (promotor, kalıp zincir, kodon–antikodon, P/A bölgeleri, peptit bağı, durdurma kodonu); mRNA olgunlaşması; replikasyon–transkripsiyon–translasyon karşılaştırması |
 | 11 · Replikasyon, genetik kod, mutasyon | Replikasyon, Meselson–Stahl simülasyonu; genetik kod tablosu; gen çevirici; mutasyon laboratuvarı |
-| 12 · Terimler | Semboller, hafıza kartları, aranabilir sözlük |
-| 13 · Genel tekrar | Tüm konulardan karışık sorular |
+| 12 · Genetik kod ve kodon atölyesi | Neden üçlü (4¹–4⁴ karşılaştırması), kodun özellikleri, okuma çerçevesi ve çerçeve kayması, tıklanabilir kod tablosu ve dejenerelik grafiği; DNA → tamamlayıcı DNA → mRNA yazma alıştırması (baz baz kontrol, sık yapılan hatalara ipucu) ve mRNA → protein çevirme |
+| 13 · Terimler | Semboller, hafıza kartları, aranabilir sözlük |
+| 14 · Genel tekrar | Tüm konulardan karışık sorular |
 
 Her bölümün sonunda **10, 20 ya da 30 soruluk seçmeli alıştırma** vardır (öğrenci seçer). Yanıt seçilince kilitlenir, doğru/yanlış ve
 adım adım çözüm o zaman açılır. "Yeni sorular" düğmesiyle sınırsız soru üretilir.
